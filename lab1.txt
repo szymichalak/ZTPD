@@ -1,0 +1,245 @@
+1.
+CREATE TYPE samochod AS OBJECT (
+    marka VARCHAR2(20),
+    model VARCHAR2(20),
+    kilometry NUMBER,
+    data_produkcji DATE,
+    cena NUMBER(10,2)
+);
+    
+CREATE TABLE samochody OF samochod;
+INSERT INTO samochody (marka, model, kilometry, data_produkcji, cena) VALUES ('FIAT', 'BRAVA', 60000, TO_DATE('1999-11-30'), 25000);
+INSERT INTO samochody (marka, model, kilometry, data_produkcji, cena) VALUES ('FORD', 'MONDEO', 80000, TO_DATE('1997-05-10'), 45000);
+INSERT INTO samochody (marka, model, kilometry, data_produkcji, cena) VALUES ('MAZDA', '323', 12000, TO_DATE('2000-09-22'), 52000);  
+
+2.
+CREATE TABLE wlasciciele (imie VARCHAR2(100), nazwisko VARCHAR2(100), auto samochod);
+INSERT INTO wlasciciele (imie, nazwisko, auto) VALUES ('Jan', 'Kowalski', NEW samochod('FIAT', 'SEICENTO', 30000, TO_DATE('2010-02-12'), 19500));
+INSERT INTO wlasciciele (imie, nazwisko, auto) VALUES ('Adam', 'Nowak', NEW samochod('OPEL', 'ASTRA', 34000, TO_DATE('2009-06-01'), 33700));
+
+3.
+ALTER TYPE samochod REPLACE AS OBJECT (
+    marka VARCHAR2(20),
+    model VARCHAR2(20),                        
+    kilometry NUMBER,                         
+    data_produkcji DATE,                        
+    cena number(10,2), 
+    MEMBER FUNCTION wartosc RETURN NUMBER
+);              
+
+CREATE OR REPLACE TYPE BODY samochod 
+IS 
+    MEMBER FUNCTION wartosc
+    RETURN NUMBER 
+    IS 
+    cena_po_latach NUMBER;
+    BEGIN
+        cena_po_latach := cena;
+        FOR i IN 1 .. (EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM data_produkcji)) LOOP
+            cena_po_latach := cena_po_latach * 0.9;
+        END LOOP;
+        RETURN ROUND(cena_po_latach, 2);
+    END wartosc;
+END;
+
+4.
+ALTER TYPE samochod ADD MAP MEMBER FUNCTION odwzoruj RETURN NUMBER CASCADE INCLUDING TABLE DATA;
+
+CREATE OR REPLACE TYPE BODY samochod
+IS
+    MEMBER FUNCTION odwzoruj 
+    RETURN NUMBER 
+    IS
+    n_porownanie NUMBER;
+    BEGIN
+        n_porownanie := (EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM data_produkcji)) + (kilometry / 10000);
+    RETURN n_porownanie;
+    END odwzoruj;
+END;
+
+5.
+CREATE TYPE wlasciciel AS OBJECT (imie VARCHAR2(100), nazwisko VARCHAR2(100));
+                                     
+ALTER TYPE samochod REPLACE AS OBJECT (
+    marka VARCHAR2(20),
+    model VARCHAR2(20),                       
+    kilometry NUMBER,                           
+    data_produkcji DATE,                        
+    cena number(10,2),
+    MEMBER FUNCTION wartosc RETURN NUMBER,
+    MAP MEMBER FUNCTION odwzoruj RETURN NUMBER CASCADE INCLUDING TABLE DATA,
+    wlasciciel_samochodu REF wlasciciel
+);
+
+7.
+DECLARE
+    TYPE t_tytuly IS TABLE OF VARCHAR2(50);
+    tytul t_tytuly := t_tytuly();
+BEGIN
+    tytul.EXTEND(3);
+
+    tytul(1) := 'Harry Potter 1';
+    tytul(2) := 'Harry Potter 2';
+    tytul(3) := 'Harry Potter 3';
+    
+    FOR i IN tytul.FIRST .. tytul.LAST LOOP
+        DBMS_OUTPUT.PUT_LINE(tytul(i));
+    END LOOP;
+    
+    DBMS_OUTPUT.NEW_LINE;
+    
+    tytul.TRIM(2);
+    
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT_LINE('Elementów w kolekcji: ' || tytul.count);
+    
+    FOR i IN tytul.FIRST .. tytul.LAST LOOP
+        DBMS_OUTPUT.PUT_LINE(tytul(i));
+    END LOOP;
+    
+    tytul.EXTEND(2);
+    
+    tytul(1) := 'Harry Potter';
+    tytul(4) := 'Harry Potter 4';
+    tytul(5) := 'Harry Potter 5';
+    
+    DBMS_OUTPUT.NEW_LINE;
+    
+    FOR i IN tytul.FIRST .. tytul.LAST LOOP
+        DBMS_OUTPUT.PUT_LINE(tytul(i));
+    END LOOP;
+    
+    DBMS_OUTPUT.PUT_LINE('Elementów w kolekcji: ' || tytul.count);
+        
+    tytul.DELETE;
+    
+    DBMS_OUTPUT.PUT_LINE('Elementów w kolekcji po usunięciu: ' || tytul.count);
+END;
+
+9.
+DECLARE
+    TYPE t_miesiace IS TABLE OF VARCHAR2(15);
+    miesiace t_miesiace := t_miesiace();
+BEGIN
+    miesiace.EXTEND(12);
+    
+    DBMS_OUTPUT.PUT_LINE('Lista miesięcy:');
+        FOR i IN 1 .. 12 LOOP
+            miesiace(i) := TO_CHAR(TO_DATE('2017-' || LPAD(i, 2, '0') || '-01'), 'month');
+        DBMS_OUTPUT.PUT_LINE(miesiace(i));
+    END LOOP;
+    
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT_LINE('Lista miesiące z "r" w nazwie:');
+    
+    FOR i IN miesiace.FIRST .. miesiace.LAST LOOP
+        IF INSTR(miesiace(i), 'r') > 0 THEN
+            DBMS_OUTPUT.PUT_LINE( miesiace(i));
+        END IF;
+    END LOOP;
+    
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT_LINE('Co drugi miesiąc, od końca:');
+    
+    FOR i IN REVERSE miesiace.FIRST .. miesiace.LAST LOOP
+        IF MOD(i, 2) != 0 THEN
+            DBMS_OUTPUT.PUT_LINE( miesiace(i));
+        END IF;
+    END LOOP;
+    
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT_LINE('Elementów w kolekcji: ' || miesiace.count);
+    
+    miesiace.DELETE(7,12);
+    
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT_LINE('Elementów w kolekcji po usunięciu: ' || miesiace.count);
+    
+    FOR i IN miesiace.FIRST .. miesiace.LAST LOOP
+        DBMS_OUTPUT.PUT_LINE(i || ': ' || miesiace(i));
+    END LOOP;
+END;
+
+
+22.
+CREATE TYPE PISARZ AS OBJECT (
+    ID_PISARZA NUMBER,
+    NAZWISKO VARCHAR2(20),
+    DATA_UR DATE,
+    KSIAZKI KSIAZKI_T,
+    MEMBER FUNCTION ILE_KSIAZEK RETURN NUMBER
+);
+
+CREATE OR REPLACE TYPE BODY PISARZ AS
+    MEMBER FUNCTION ILE_KSIAZEK RETURN NUMBER IS
+    BEGIN
+        RETURN KSIAZKI.COUNT();
+    END ILE_KSIAZEK;
+END;
+
+CREATE TYPE KSIAZKA AS OBJECT (
+    ID_KSIAZKI NUMBER,
+    ID_PISARZA NUMBER,
+    TYTUL VARCHAR2(50),
+    DATA_WYDANIA DATE,
+    MEMBER FUNCTION WIEK RETURN NUMBER
+);
+
+CREATE OR REPLACE TYPE BODY KSIAZKA AS
+    MEMBER FUNCTION WIEK RETURN NUMBER IS
+    BEGIN
+        RETURN EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM DATA_WYDANIA);
+    END WIEK;
+END;
+
+CREATE OR REPLACE VIEW KSIAZKI_VIEW OF KSIAZKA
+WITH OBJECT IDENTIFIER(ID_KSIAZKI)
+AS SELECT ID_KSIAZKI, ID_PISARZA, TYTUL, DATA_WYDANIA FROM KSIAZKI;
+
+CREATE OR REPLACE VIEW PISARZE_VIEW OF PISARZ
+WITH OBJECT IDENTIFIER(ID_PISARZA)
+AS SELECT ID_PISARZA, NAZWISKO, DATA_UR, CAST(MULTISET(SELECT TYTUL FROM KSIAZKI WHERE ID_PISARZA=P.ID_PISARZA) AS KSIAZKI_T) FROM PISARZE P;
+
+
+23.
+CREATE TYPE AUTO_OSOBOWE UNDER AUTO (
+    LICZBA_MIEJSC NUMBER,
+    CZY_KLIMATYZACJA VARCHAR2(3),
+    OVERRIDING MEMBER FUNCTION WARTOSC RETURN NUMBER
+);
+
+CREATE OR REPLACE TYPE BODY AUTO_OSOBOWE AS
+    OVERRIDING MEMBER FUNCTION WARTOSC RETURN NUMBER IS
+        WARTOSC NUMBER;
+    BEGIN
+        WARTOSC := (SELF AS AUTO).WARTOSC();
+        IF (CZY_KLIMATYZACJA = 'TAK') THEN
+            WARTOSC := WARTOSC * 1.5;
+        END IF;
+        RETURN WARTOSC;
+    END;
+END;
+
+CREATE TYPE AUTO_CIEZAROWE UNDER AUTO (
+    MAKSYMALNA_LADOWNOSC NUMBER,
+    OVERRIDING MEMBER FUNCTION WARTOSC RETURN NUMBER
+);
+
+CREATE OR REPLACE TYPE BODY AUTO_CIEZAROWE AS
+    OVERRIDING MEMBER FUNCTION WARTOSC RETURN NUMBER IS
+        WARTOSC NUMBER;
+    BEGIN
+        WARTOSC := (SELF AS AUTO).WARTOSC();
+        IF (MAKSYMALNA_LADOWNOSC > 10000) THEN
+            WARTOSC := WARTOSC * 2;
+        END IF;
+        RETURN WARTOSC;
+    END;
+END;
+
+INSERT INTO AUTA VALUES (AUTO_OSOBOWE('Volkswagen', 'Passat', 20000, DATE '2010-05-05', 60000, 5, 'NIE'));
+INSERT INTO AUTA VALUES (AUTO_OSOBOWE('Wolkswagen', 'Golf', 40000, DATE '2015-10-30', 50000, 4, 'TAK'));
+INSERT INTO AUTA VALUES (AUTO_CIEZAROWE('Mercedes', 'Actros', 800000, DATE '2010-04-30', 50000, 8000));
+INSERT INTO AUTA VALUES (AUTO_CIEZAROWE('Volvo', 'FH12', 120000, DATE '2020-11-30', 50000, 12000));
+
+SELECT A.MARKA, A.WARTOSC() FROM AUTA A;
