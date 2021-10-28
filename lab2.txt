@@ -1,0 +1,101 @@
+-- zadanie 1
+create table movies (
+    ID NUMBER(12) PRIMARY KEY,
+    TITLE VARCHAR2(400) NOT NULL,
+    CATEGORY VARCHAR2(50),
+    YEAR CHAR(4),
+    CAST VARCHAR(4000),
+    DIRECTOR VARCHAR(4000),
+    STORY VARCHAR(4000),
+    PRICE NUMBER(5,2),
+    COVER BLOB,
+    MIME_TYPE VARCHAR(50)
+);
+
+-- zadanie 2
+insert into movies (
+    ID, TITLE, CATEGORY, YEAR, 
+    CAST, DIRECTOR, STORY, PRICE,
+    COVER, MIME_TYPE
+) select
+    d.id, d.title, d.category, d.year,
+    d.cast, d.director, d.story, d.price,
+    c.image, c.mime_type
+from descriptions d left join covers c on c.movie_id = d.id;
+
+
+-- zadanie 3
+select id, title FROM movies where cover IS NULL;
+
+-- zadanie 4
+select id, title, dbms_lob.getlength(cover) AS filesize from movies
+where cover IS NOT NULL;
+
+--zadanie 5
+select id, title, dbms_lob.getlength(cover) AS filesize from movies
+where cover IS NULL;
+
+-- zadanie 6
+select directory_name, directory_path from all_directories;
+
+-- zadanie 7
+update movies set cover = EMPTY_BLOB(), mime_type = 'image/jpeg' where id = 66;
+
+-- zadanie 8
+select id, title, dbms_lob.getlength(cover) AS filesize from movies
+where id = 66 or id = 65;
+
+-- zadanie 9
+DECLARE
+    lobd blob;
+    fils BFILE := BFILENAME('ZSBD_DIR', 'escape.jpg');
+BEGIN
+    select cover into lobd
+    from movies
+    where id = 66
+    for update;
+    DBMS_LOB.FILEOPEN(fils, DBMS_LOB.file_readonly);
+    DBMS_LOB.LOADFROMFILE(lobd, fils, DBMS_LOB.getlength(fils));
+    DBMS_LOB.FILECLOSE(fils);
+    COMMIT;
+END;
+
+-- zadanie 10
+create table temp_covers (
+    movie_id NUMBER(12),
+    image BFILE,
+    mime_type VARCHAR2(50)
+);
+
+-- zadanie 11
+insert into temp_covers values (65, BFILENAME('ZSBD_DIR', 'eagles.jpg'), 'image/jpeg');
+
+-- zadanie 12
+select movie_id, dbms_lob.getlength(image) AS filesize from temp_covers;
+
+--zadanie 13
+DECLARE
+    lobd blob;
+    fils TEMP_COVERS.IMAGE%TYPE;
+    MIME TEMP_COVERS.MIME_TYPE%TYPE;
+BEGIN
+    SELECT IMAGE, MIME_TYPE INTO FILS, MIME
+    FROM TEMP_COVERS
+    WHERE MOVIE_ID = 65;
+    DBMS_LOB.CREATETEMPORARY(LOBD, TRUE);
+    DBMS_LOB.fileOPEN(fils, DBMS_LOB.file_readonly);
+    DBMS_LOB.LOADFROMFILE(lobd, fils, DBMS_LOB.getlength(fils));
+    DBMS_LOB.FILECLOSE(fils);
+    UPDATE MOVIES SET COVER = lobd, MIME_TYPE = MIME 
+    WHERE ID = 65;   
+    dbms_lob.freetemporary(LOBD);
+    COMMIT;
+END;
+
+-- zadanie 14
+select id, title, dbms_lob.getlength(COVER) AS filesize from movies
+where id = 66 or id = 65;
+    
+-- zadanie 15
+drop table movies;
+drop table temp_covers;
