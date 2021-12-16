@@ -1,0 +1,66 @@
+-- zadanie 5
+"select istream data, kursZamkniecia, spolka, max(kursZamkniecia) - kursZamkniecia as roznica " +
+"from KursAkcji.win:ext_timed_batch(data.getTime(), 1 days)"
+
+-- zadanie 6
+"select istream data, kursZamkniecia, spolka, max(kursZamkniecia) - kursZamkniecia as roznica " +
+"from KursAkcji(spolka in ('Honda', 'IBM', 'Microsoft')).win:ext_timed_batch(data.getTime(), 1 days)"
+
+-- zadanie 7a
+"select istream data, kursOtwarcia, kursZamkniecia, spolka " +
+"from KursAkcji.win:length(1)" +
+"where kursZamkniecia > kursOtwarcia"
+
+-- zadanie 7b
+"select istream data, kursOtwarcia, kursZamkniecia, spolka " +
+"from KursAkcji(KursAkcji.roznicaKursow(kursOtwarcia, kursZamkniecia) > 0).win:length(1)"
+
+--zadanie 8
+"select istream data, kursZamkniecia, spolka, max(kursZamkniecia) - kursZamkniecia as roznica " +
+"from KursAkcji(spolka in ('PepsiCo', 'CocaCola')).win:ext_timed(data.getTime(), 7 days)"
+
+-- zadanie 9
+"select istream data, spolka, kursZamkniecia, max(kursZamkniecia) " +
+"from KursAkcji(spolka in ('PepsiCo', 'CocaCola')).win:ext_timed_batch(data.getTime(), 1 days)" +
+"having max(kursZamkniecia) = kursZamkniecia"
+
+-- zadanie 10
+"select istream max(kursZamkniecia) as maksimum " +
+"from KursAkcji.win:ext_timed_batch(data.getTime(), 7 days)"
+
+-- zadanie 11
+"select istream pep.kursZamkniecia as kursPep, coc.kursZamkniecia as kursCoc, pep.data " +
+"from KursAkcji(spolka = 'CocaCola').win:length(1) as coc join " +
+"KursAkcji(spolka = 'PepsiCo').win:length(1) as pep " +
+"on coc.data = pep.data " +
+"where pep.kursZamkniecia > coc.kursZamkniecia"
+
+-- zadanie 12
+"select istream a.spolka, a.data, a.kursZamkniecia as kursBiezacy, a.kursZamkniecia - b.kursZamkniecia as roznica " +
+"from KursAkcji(spolka in ('PepsiCo', 'CocaCola')).win:length(1) as a join " +
+"KursAkcji(spolka in ('PepsiCo', 'CocaCola')).std:firstunique(spolka) as b " +
+"on a.spolka = b.spolka"
+
+-- zadanie 13
+"select istream a.spolka, a.data, a.kursZamkniecia as kursBiezacy, a.kursZamkniecia - b.kursZamkniecia as roznica " +
+"from KursAkcji.win:length(1) as a join " +
+"KursAkcji.std:firstunique(spolka) as b " +
+"on a.spolka = b.spolka " +
+"where a.kursZamkniecia > b.kursZamkniecia"
+
+-- zadanie 14
+"select istream a.data, b.data, a.spolka, a.kursOtwarcia, b.kursOtwarcia " +
+"from KursAkcji.win:ext_timed(data.getTime(), 7 days) as a join " +
+"KursAkcji.win:ext_timed(data.getTime(), 7 days) as b " +
+"on a.spolka = b.spolka " +
+"where a.kursOtwarcia - b.kursOtwarcia > 3"
+
+-- zadanie 15
+"select istream data, spolka, obrot " +
+"from KursAkcji(market = 'NYSE').win:ext_timed_batch(data.getTime(), 7 days) " +
+"order by obrot desc limit 3"
+
+-- zadanie 16
+"select istream data, spolka, obrot " +
+"from KursAkcji(market = 'NYSE').win:ext_timed_batch(data.getTime(), 7 days) " +
+"order by obrot desc limit 2, 1"

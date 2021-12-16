@@ -1,0 +1,36 @@
+-- zadanie 24
+"SELECT IRSTREAM spolka as X, kursOtwarcia as Y " +
+"FROM KursAkcji.win:length(3) " +
+"WHERE spolka = 'Oracle'"
+-- odpowiedż
+-- nie ma ograniczenia strumienia w "WHERE"
+
+
+-- zadanie 25
+"SELECT IRSTREAM data, kursOtwarcia, spolka " +
+"FROM KursAkcji.win:length(3) " +
+"WHERE spolka = 'Oracle'"	
+	
+-- zadanie 26
+"SELECT IRSTREAM data, kursOtwarcia, spolka " +
+"FROM KursAkcji(spolka='Oracle').win:length(3) "
+	
+-- zadanie 27
+"SELECT ISTREAM data, kursOtwarcia, spolka " +
+"FROM KursAkcji(spolka='Oracle').win:length(3) "
+
+-- zadanie 28
+"SELECT ISTREAM MAX(kursOtwarcia) " +
+"FROM KursAkcji(spolka='Oracle').win:length(5) "
+
+-- zadanie 29
+"SELECT ISTREAM kursOtwarcia - MAX(kursOtwarcia) AS roznica " +
+"FROM KursAkcji(spolka='Oracle').win:length(5) "
+-- odpowiedź
+-- tutaj funkcja max zwraca maksymalną wartość z danego okna, 
+-- natomiast w SQL max zwraca największą wartość z grupy
+
+-- zadanie 30
+"SELECT ISTREAM data, spolka, kursOtwarcia - MIN(kursOtwarcia) AS roznica " +
+"FROM KursAkcji(spolka='Oracle').win:length(2) " +
+"HAVING kursOtwarcia > MIN(kursOtwarcia)"
